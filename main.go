@@ -23,6 +23,8 @@ const token = "1675953280:AAEarqSDBOY6M_O1j7AHC_5uua7oHw28Ze4"
 
 var db *sql.DB
 
+var bot *tgbotapi.BotAPI
+
 type userData struct {
 	id       int
 	username string
@@ -46,13 +48,9 @@ func getUserByUsername(username string) (*userData, string) {
 }
 
 func isAdmin(chatID int64) bool {
-	row := db.QueryRow(`SELECT is_admin FROM "user" WHERE chat_id = $1`, chatID)
-	var isAdmin bool
-	err := row.Scan(&isAdmin)
-	if err != nil {
-		return false
-	}
-	return isAdmin
+	row := db.QueryRow(`SELECT * FROM "admin" WHERE chat_id = $1`, chatID)
+	err := row.Scan()
+	return err == nil
 }
 
 func registerUser(username string, password string, chatID int64) (*userData, string) {
@@ -94,8 +92,16 @@ func raidContest(contestID string) error {
 		if err != nil {
 			continue
 		}
-		n.LoginContest(contestID)
-		n.SendHelloWorld()
+		err = n.LoginContest(contestID)
+		if err != nil {
+			continue
+		}
+		err = n.SendHelloWorld()
+		if err != nil {
+			continue
+		}
+		msg := tgbotapi.NewMessage(user.chatID, "Дед получил от тебя Hello World")
+		bot.Send(msg)
 	}
 
 	return nil
