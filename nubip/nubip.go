@@ -59,3 +59,28 @@ func (n *NubipAPI) authenticate(username, password string) error {
 
 	return nil
 }
+
+func (n *NubipAPI) LoginContest(contestID string) error {
+	_, err := n.client.Get(nubipHost + "contests?login=" + contestID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *NubipAPI) SendHelloWorld() error {
+	data := url.Values{
+		"new":           {"2"},
+		"MAX_FILE_SIZE": {"2097152"},
+		"pid":           {"1000"},
+		"lang":          {"12"},
+		"ctype":         {"F"},
+		"source":        {"apitest"},
+	}
+	_, err := n.client.PostForm(nubipHost+"solutions", data)
+	if err != nil {
+		return err
+	}
+	return nil
+}

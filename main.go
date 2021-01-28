@@ -15,7 +15,7 @@ const (
 	dbHost     = "37.57.205.178"
 	dbPort     = 5432
 	dbUser     = "developer"
-	dbPassword = "***REMOVED***"
+	dbPassword = ""
 	dbName     = "nubipbot"
 )
 
@@ -45,6 +45,16 @@ func getUserByUsername(username string) (*userData, string) {
 	return &user, ""
 }
 
+func isAdmin(chatID int64) bool {
+	row := db.QueryRow(`SELECT is_admin FROM "user" WHERE chat_id = $1`, chatID)
+	var isAdmin bool
+	err := row.Scan(&isAdmin)
+	if err != nil {
+		return false
+	}
+	return isAdmin
+}
+
 func registerUser(username string, password string, chatID int64) (*userData, string) {
 	_, err := nubip.NewNubipAPI(username, password)
 	if err != nil {
@@ -68,32 +78,82 @@ func deleteUser(id int) string {
 	return err.Error()
 }
 
+func raidContest(contestID string) error {
+	rows, err := db.Query(`SELECT * FROM "user"`)
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+		var user userData
+		err = rows.Scan(&user.id, &user.username, &user.password, &user.chatID, &user.isAdmin)
+		if err != nil {
+			continue
+		}
+		n, err := nubip.NewNubipAPI(user.username, user.password)
+		if err != nil {
+			continue
+		}
+		n.LoginContest(contestID)
+		n.SendHelloWorld()
+	}
+
+	return nil
+}
+
 func serveUser(text string, chatID int64) string {
 	parts := strings.Split(text, "\n")
-	if len(parts) < 2 {
+	if len(parts) < 1 {
 		return "Неверный формат"
 	}
 
-	username := parts[0]
-	password := parts[1]
+	cmd := parts[0]
+	if cmd == "user" {
+		if len(parts) < 3 {
+			return "Неверный формат"
+		}
 
-	user, _ := getUserByUsername(username)
+		username := parts[1]
+		password := parts[2]
 
-	if user == nil {
-		_, result := registerUser(username, password, chatID)
-		return result
+		user, _ := getUserByUsername(username)
+
+		if user == nil {
+			_, result := registerUser(username, password, chatID)
+			return result
+		}
+
+		if password == user.password {
+			result := deleteUser(user.id)
+			return result
+		}
+
+		return "Неверный пароль"
 	}
 
-	if password == user.password {
-		result := deleteUser(user.id)
-		return result
+	if cmd == "contest" {
+		if len(parts) < 2 {
+			return "Неверный формат"
+		}
+
+		if !isAdmin(chatID) {
+			return "Недостаточно прав"
+		}
+
+		contest := parts[1]
+		err := raidContest(contest)
+		if err != nil {
+			return err.Error()
+		}
+		return "Набег завершён"
 	}
 
-	return "Неверный пароль"
+	return "Неверный формат"
 }
 
 func main() {
 	var err error
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
 	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
