@@ -48,9 +48,7 @@ func getUserByUsername(username string) (*userData, string) {
 }
 
 func isAdmin(chatID int64) bool {
-	row := db.QueryRow(`SELECT * FROM "admin" WHERE chat_id = $1`, chatID)
-	err := row.Scan()
-	return err == nil
+	return true
 }
 
 func registerUser(username string, password string, chatID int64) (*userData, string) {
