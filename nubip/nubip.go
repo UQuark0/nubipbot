@@ -76,7 +76,7 @@ func (n *NubipAPI) SendHelloWorld() error {
 		"pid":           {"1000"},
 		"lang":          {"12"},
 		"ctype":         {"F"},
-		"source":        {"print('Hello World')"},
+		"source":        {"print('Hello World!')"},
 	}
 	_, err := n.client.PostForm(nubipHost+"solutions", data)
 	if err != nil {
