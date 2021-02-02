@@ -15,7 +15,7 @@ const (
 	dbHost     = "37.57.205.178"
 	dbPort     = 5432
 	dbUser     = "developer"
-	dbPassword = ""
+	dbPassword = "f7b391b19acafeb16ba6f1e4676a617e"
 	dbName     = "nubipbot"
 )
 
@@ -98,8 +98,8 @@ func raidContest(contestID string) error {
 		if err != nil {
 			continue
 		}
-		msg := tgbotapi.NewMessage(user.chatID, "Дед получил от тебя Hello World")
-		bot.Send(msg)
+		// msg := tgbotapi.NewMessage(user.chatID, "Дед получил от тебя Hello World")
+		// bot.Send(msg)
 	}
 
 	return nil
